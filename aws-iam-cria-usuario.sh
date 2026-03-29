@@ -6,7 +6,7 @@
 # -----------------------------------------------
 INPUT=$1
 OLDIFS=$IFS
-IFS=','
+IFS=',;'
 [ ! -f $INPUT ] && { echo "$INPUT arquivo nao encontrado"; exit 99; }
 command -v dos2unix >/dev/null || { echo "utilitario dos2unix nao encontrado. Por favor, instale dos2unix antes de rodar o script."; exit 1; }
 dos2unix $INPUT

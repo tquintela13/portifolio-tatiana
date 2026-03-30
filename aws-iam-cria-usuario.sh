@@ -1,21 +1,38 @@
 #!/bin/bash
+
 # Proposito: Automatiza a criação de usuários na AWS
-# Utilizacao: ./aws-iam-cria-usuario.sh <formato arquivo entrada .csv>
-# Formato do arquivo de entrada: usuarios,grupo,senha
-# Autor: Jean Rodrigues
-# -----------------------------------------------
+# Utilizacao: ./aws-iam-cria-usuario.sh <arquivo.csv>
+# Formato: usuario;grupo;senha
+
 INPUT=$1
+
+[ ! -f "$INPUT" ] && { echo "$INPUT arquivo nao encontrado"; exit 99; }
+
 OLDIFS=$IFS
-IFS=',;'
-[ ! -f $INPUT ] && { echo "$INPUT arquivo nao encontrado"; exit 99; }
-command -v dos2unix >/dev/null || { echo "utilitario dos2unix nao encontrado. Por favor, instale dos2unix antes de rodar o script."; exit 1; }
-dos2unix $INPUT
-while read -r usuario grupo senha || [ -n "$usuario" ]
+IFS=';'
+
+while read -r usuario grupo senha
 do
-if [ "$usuario" != "usuarios" ]; then
-aws iam create-user --user-name $usuario
-aws iam create-login-profile --password-reset-required --user-name $usuario --password $senha
-aws iam add-user-to-group --group-name $grupo --user-name $usuario
-fi
-done < $INPUT
+    # Ignora cabeçalho
+    if [ "$usuario" != "usuarios" ]; then
+
+        # Remove espaços extras
+        usuario=$(echo "$usuario" | xargs)
+        grupo=$(echo "$grupo" | xargs)
+        senha=$(echo "$senha" | xargs)
+
+        echo "Criando usuário: $usuario"
+
+        aws iam create-user --user-name "$usuario"
+        aws iam create-login-profile --password-reset-required \
+            --user-name "$usuario" \
+            --password "$senha"
+
+        aws iam add-user-to-group \
+            --group-name "$grupo" \
+            --user-name "$usuario"
+    fi
+
+done < "$INPUT"
+
 IFS=$OLDIFS
